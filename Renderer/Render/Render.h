@@ -2,14 +2,16 @@
 #include <glm/glm.hpp>
 #undef near
 #undef far
+#include "Transform.h"
 
 class Mesh;
 typedef unsigned int GLuint;
 
 struct Camera {
 	void Init();
+	void Gui();
 public:
-	glm::vec3 position, rotation;
+	Transform transform;
 	float near, far;
 	//fov in degree
 	float fov;
@@ -20,6 +22,7 @@ public:
 	void Init(float aspectRatio);
 	void Render();
 	void RenderMesh(const Mesh& mesh);
+	void Gui();
 private:
 	//set up view and projection matrix
 	void Render_VP();

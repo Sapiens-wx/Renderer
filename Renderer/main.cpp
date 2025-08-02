@@ -38,7 +38,11 @@ Renderer renderer;
 Mesh mesh;
 
 void gui() {
-    mesh.Gui();
+    if (im::Begin("Config")) {
+        renderer.Gui();
+		mesh.Gui();
+    }
+    im::End();
 }
 void init() {
     glewInit();

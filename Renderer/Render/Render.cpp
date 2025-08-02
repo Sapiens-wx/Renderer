@@ -5,6 +5,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <GL/glew.h>
 #include <SDL3/SDL_opengl.h>
+#include <imgui.h>
 #undef near
 #undef far
 #include "../def.h"
@@ -40,8 +41,18 @@ void Camera::Init() {
 	fov = 90;
 	near = 0.1;
 	far = 1000;
-	position = glm::vec3(0, 0, -5);
-	rotation = glm::vec3(0, 0, 0);
+	transform.position = glm::vec3(0, 0, -5);
+	transform.rotation = glm::vec3(0, 0, 0);
+}
+
+namespace im = ImGui;
+void Camera::Gui() {
+	if (im::CollapsingHeader("camera")) {
+		im::Indent(); transform.Gui(); im::Unindent();
+		im::DragFloat("fov", &fov, IM_DRAGFLOAT_SPD, 0, 360);
+		im::DragFloat("near", &near, IM_DRAGFLOAT_SPD);
+		im::SameLine(); im::DragFloat("far", &far, IM_DRAGFLOAT_SPD);
+	}
 }
 
 void Renderer::Init(float aspectRatio)
@@ -51,12 +62,18 @@ void Renderer::Init(float aspectRatio)
 	camera.Init();
 }
 
+void Renderer::Gui() {
+	if (im::CollapsingHeader("Renderer")) {
+		im::Indent(); camera.Gui(); im::Unindent();
+	}
+}
+
 void Renderer::Render() {
 	Render_VP();
 }
 
 void Renderer::RenderMesh(const Mesh& mesh) {
-	glm::mat4 model = mesh.transform.GetMatrix();
+	glm::mat4 model = mesh.transform.Local2World();
 
 	// 获取在 shader 中的 uniform 变量位置
 	GLuint modelLoc = glGetUniformLocation(shader, "model");
@@ -104,9 +121,10 @@ void Renderer::RenderMesh(const Mesh& mesh) {
 
 void Renderer::Render_VP() {
 	// 视图矩阵（摄像机位置）
-	view = glm::lookAt(camera.position,   // 摄像机位置
+	view = glm::lookAt(camera.transform.position,   // 摄像机位置
 		glm::vec3(0.0f, 0.0f, 0.0f),   // 目标点
 		glm::vec3(0.0f, 1.0f, 0.0f));  // 上向量
+	view = camera.transform.World2Local();
 
 	// 投影矩阵（透视投影）
 	projection = glm::perspective(glm::radians(camera.fov),   // 视野角度
