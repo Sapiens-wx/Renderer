@@ -8,10 +8,12 @@
 // - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
 // - Introduction, links and more at the top of imgui.cpp
 
+#define GL_GLEXT_PROTOTYPES
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_opengl3.h"
 #include <stdio.h>
+#include <GL/glew.h>
 #include <SDL3/SDL.h>
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <SDL3/SDL_opengles2.h>
@@ -25,11 +27,30 @@
 #pragma endregion
 #include <iostream>
 #include <fstream>
+#include "Render/Render.h"
+#include "Render/Mesh.h"
+
 
 namespace im = ImGui;
+
+constexpr int SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720;
+Renderer renderer;
+Mesh mesh;
+
+void gui() {
+    mesh.Gui();
+}
+void init() {
+    glewInit();
+    renderer.Init((float)SCREEN_WIDTH / SCREEN_HEIGHT);
+    mesh.vertices = { glm::vec3(-1,1,0), glm::vec3(1,1,0),glm::vec3(1,-1,0), glm::vec3(-1,-1,0) };
+    mesh.tris = { 0,2,1,0,3,2 };
+    mesh.transform.position = glm::vec3(0, 0, 0);
+    mesh.transform.rotation = glm::vec3(0, 0, 0);
+}
 void draw() {
-    static char buf[128];
-    im::InputText("abc", buf, sizeof(buf));
+    renderer.Render();
+    renderer.RenderMesh(mesh);
 }
 
 // Main code
@@ -80,7 +101,7 @@ int main(int, char**)
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     float main_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
     SDL_WindowFlags window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY;
-    SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL3+OpenGL3 example", (int)(1280 * main_scale), (int)(720 * main_scale), window_flags);
+    SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL3+OpenGL3 example", (int)(SCREEN_WIDTH * main_scale), (int)(SCREEN_HEIGHT * main_scale), window_flags);
     if (window == nullptr)
     {
         printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
@@ -139,6 +160,7 @@ int main(int, char**)
     bool show_demo_window = true;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    init();
 
     // Main loop
     bool done = false;
@@ -183,13 +205,14 @@ int main(int, char**)
         //if (show_demo_window)
             //ImGui::ShowDemoWindow(&show_demo_window);
 
-        draw();
+        gui();
 
         // Rendering
         ImGui::Render();
         glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
         glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
+        draw();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(window);
     }
