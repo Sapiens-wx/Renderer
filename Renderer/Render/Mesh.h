@@ -2,15 +2,28 @@
 #include <glm/glm.hpp>
 #include <vector>
 #include <string>
+#include <fstream>
 #include "Transform.h"
+
+class Vertex {
+public:
+	Vertex(const glm::vec3 pos) :pos(pos) {}
+	Vertex() {}
+public:
+	glm::vec3 pos;
+	glm::vec2 uv;
+	glm::vec2 normal;
+};
 
 class Mesh {
 public:
 	Mesh();
 	void Gui();
+	void LoadFromFile(const char* path);
+	void LoadFromFile_Obj(std::ifstream& file);
 public:
 	Transform transform;
-	std::vector<glm::vec3> vertices;
+	std::vector<Vertex> vertices;
 	std::vector<int> tris;
 	std::string name;
 };

@@ -35,26 +35,60 @@ namespace im = ImGui;
 
 constexpr int SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720;
 Renderer renderer;
-Mesh mesh;
+Mesh mesh_monkey, mesh_cube;
 
 void gui() {
     if (im::Begin("Config")) {
         renderer.Gui();
-		mesh.Gui();
+		mesh_monkey.Gui();
+        mesh_cube.Gui();
     }
     im::End();
 }
 void init() {
     glewInit();
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
     renderer.Init((float)SCREEN_WIDTH / SCREEN_HEIGHT);
-    mesh.vertices = { glm::vec3(-1,1,0), glm::vec3(1,1,0),glm::vec3(1,-1,0), glm::vec3(-1,-1,0) };
-    mesh.tris = { 0,2,1,0,3,2 };
-    mesh.transform.position = glm::vec3(0, 0, 0);
-    mesh.transform.rotation = glm::vec3(0, 0, 0);
+    mesh_monkey.LoadFromFile("Resources\\Mesh\\monkey.obj");
+    mesh_monkey.transform.position = glm::vec3(0, 0, 0);
+    mesh_monkey.transform.SetRotation(glm::vec3(0, 0, 0));
+    mesh_cube.LoadFromFile("Resources\\Mesh\\cube.obj");
+    mesh_cube.transform.position = glm::vec3(0, 0, 2);
+    mesh_cube.transform.SetRotation(glm::vec3(0, 0, 0));
+}
+void update() {
+    const bool* keys = SDL_GetKeyboardState(NULL);
+    if(keys[SDL_SCANCODE_A])
+		renderer.camera.transform.position -= renderer.camera.transform.Right() * .3f;
+    if(keys[SDL_SCANCODE_D])
+		renderer.camera.transform.position += renderer.camera.transform.Right() * .3f;
+    if(keys[SDL_SCANCODE_S])
+		renderer.camera.transform.position += renderer.camera.transform.Forward() * .3f;
+    if(keys[SDL_SCANCODE_W])
+		renderer.camera.transform.position -= renderer.camera.transform.Forward() * .3f;
+}
+void handle_event(SDL_Event& event) {
+    switch (event.type) {
+    case SDL_EVENT_MOUSE_WHEEL:
+        renderer.camera.transform.position.z-=event.wheel.y;
+        break;
+    case SDL_EVENT_MOUSE_MOTION:
+        if (SDL_GetMouseState(0, 0) & SDL_BUTTON_MASK(SDL_BUTTON_RIGHT)) {
+            glm::quat rotY(glm::radians(event.motion.xrel*.1f), Transform::up);
+            //glm::quat rotX(glm::radians(event.motion.yrel*.1f), Transform::right);
+            renderer.camera.transform.rotation = rotY* renderer.camera.transform.rotation;
+        }
+        break;
+    }
 }
 void draw() {
     renderer.Render();
-    renderer.RenderMesh(mesh);
+    renderer.RenderMesh(mesh_monkey);
+    renderer.RenderMesh(mesh_cube);
 }
 
 // Main code
@@ -168,6 +202,7 @@ int main(int, char**)
 
     // Main loop
     bool done = false;
+	int hasEvent = 0;
 #ifdef __EMSCRIPTEN__
     // For an Emscripten build we are disabling file-system access, so let's not attempt to do a fopen() of the imgui.ini file.
     // You may manually call LoadIniSettingsFromMemory() to load settings from your own storage.
@@ -186,11 +221,14 @@ int main(int, char**)
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
+            hasEvent = 3;
             ImGui_ImplSDL3_ProcessEvent(&event);
             if (event.type == SDL_EVENT_QUIT)
                 done = true;
             if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(window))
                 done = true;
+            else
+                handle_event(event);
         }
 
         // [If using SDL_MAIN_USE_CALLBACKS: all code below would likely be your SDL_AppIterate() function]
@@ -200,24 +238,28 @@ int main(int, char**)
             continue;
         }
 
-        // Start the Dear ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL3_NewFrame();
-        ImGui::NewFrame();
+        if (hasEvent) {
+            --hasEvent;
+            update();
+            // Start the Dear ImGui frame
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplSDL3_NewFrame();
+            ImGui::NewFrame();
 
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        //if (show_demo_window)
-            //ImGui::ShowDemoWindow(&show_demo_window);
+            // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+            //if (show_demo_window)
+                //ImGui::ShowDemoWindow(&show_demo_window);
 
-        gui();
+            gui();
 
-        // Rendering
-        ImGui::Render();
-        glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-        glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-        glClear(GL_COLOR_BUFFER_BIT);
-        draw();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+            // Rendering
+            ImGui::Render();
+            glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+            glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            draw();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        }
         SDL_GL_SwapWindow(window);
     }
 #ifdef __EMSCRIPTEN__

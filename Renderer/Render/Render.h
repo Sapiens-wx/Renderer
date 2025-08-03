@@ -26,12 +26,15 @@ public:
 private:
 	//set up view and projection matrix
 	void Render_VP();
+	void Render_Light();
 	/*
 	void Render_InitBuffer();
 	void Render_ReleaseBuffer();
 	*/
-private:
+public:
 	Camera camera;
+	glm::vec3 lightDir;
+private:
 	GLuint shader;
 
 	float aspectRatio;

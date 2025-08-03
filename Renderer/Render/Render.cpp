@@ -41,8 +41,8 @@ void Camera::Init() {
 	fov = 90;
 	near = 0.1;
 	far = 1000;
-	transform.position = glm::vec3(0, 0, -5);
-	transform.rotation = glm::vec3(0, 0, 0);
+	transform.position = glm::vec3(0, 0, 10);
+	transform.SetRotation(glm::vec3(0, 0, 0));
 }
 
 namespace im = ImGui;
@@ -65,11 +65,14 @@ void Renderer::Init(float aspectRatio)
 void Renderer::Gui() {
 	if (im::CollapsingHeader("Renderer")) {
 		im::Indent(); camera.Gui(); im::Unindent();
+		im::DragFloat3("lightDir", &lightDir.x, IM_DRAGFLOAT_SPD);
 	}
 }
 
 void Renderer::Render() {
+	glUseProgram(shader);
 	Render_VP();
+	Render_Light();
 }
 
 void Renderer::RenderMesh(const Mesh& mesh) {
@@ -81,7 +84,6 @@ void Renderer::RenderMesh(const Mesh& mesh) {
 	GLuint projectionLoc = glGetUniformLocation(shader, "projection");
 
 	// 在渲染循环中，设置矩阵
-	glUseProgram(shader);
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
@@ -99,15 +101,19 @@ void Renderer::RenderMesh(const Mesh& mesh) {
 
 	// 绑定 VBO，上传顶点数据
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*mesh.vertices.size(), mesh.vertices.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*mesh.vertices.size(), mesh.vertices.data(), GL_STATIC_DRAW);
 
 	// 绑定 EBO，上传索引数据
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*mesh.tris.size(), mesh.tris.data(), GL_STATIC_DRAW);
 
 	// 设置顶点属性指针
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (GLvoid*)0); // 顶点位置
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0); // vertex position
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0); // vertex position
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0); // vertex position
 	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
 
 	//========Render========
 	// 在渲染循环中使用 VAO 和着色器渲染立方体
@@ -115,6 +121,8 @@ void Renderer::RenderMesh(const Mesh& mesh) {
 
 	//disable
 	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(2);
 	// 解绑 VAO
 	glBindVertexArray(0);
 }
@@ -130,4 +138,8 @@ void Renderer::Render_VP() {
 	projection = glm::perspective(glm::radians(camera.fov),   // 视野角度
 		aspectRatio, // 窗口宽高比
 		camera.near, camera.far); // 近平面与远平面
+}
+void Renderer::Render_Light() {
+	GLint lightLoc = glGetUniformLocation(shader, "lightDir");
+	glUniform3fv(lightLoc, 1, &lightDir.x);
 }
