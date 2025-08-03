@@ -29,10 +29,14 @@
 #include <fstream>
 #include "Render/Render.h"
 #include "Render/Mesh.h"
+#include "def.h"
 
 
 namespace im = ImGui;
 
+//event related
+int hasEvent = 0;
+//render
 constexpr int SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720;
 Renderer renderer;
 Mesh mesh_monkey, mesh_cube;
@@ -62,14 +66,22 @@ void init() {
 }
 void update() {
     const bool* keys = SDL_GetKeyboardState(NULL);
-    if(keys[SDL_SCANCODE_A])
-		renderer.camera.transform.position -= renderer.camera.transform.Right() * .3f;
-    if(keys[SDL_SCANCODE_D])
-		renderer.camera.transform.position += renderer.camera.transform.Right() * .3f;
-    if(keys[SDL_SCANCODE_S])
-		renderer.camera.transform.position += renderer.camera.transform.Forward() * .3f;
-    if(keys[SDL_SCANCODE_W])
-		renderer.camera.transform.position -= renderer.camera.transform.Forward() * .3f;
+    int oldHasEvent = hasEvent;
+    hasEvent = 2;
+    if (keys[SDL_SCANCODE_A])
+        renderer.camera.transform.position -= renderer.camera.transform.Right() * .3f;
+    else if (keys[SDL_SCANCODE_D])
+        renderer.camera.transform.position += renderer.camera.transform.Right() * .3f;
+    else if (keys[SDL_SCANCODE_S])
+        renderer.camera.transform.position += renderer.camera.transform.Forward() * .3f;
+    else if (keys[SDL_SCANCODE_W])
+        renderer.camera.transform.position -= renderer.camera.transform.Forward() * .3f;
+    else if (keys[SDL_SCANCODE_Q])
+        renderer.camera.transform.position -= renderer.camera.transform.Up() * .3f;
+    else if (keys[SDL_SCANCODE_E])
+        renderer.camera.transform.position += renderer.camera.transform.Up() * .3f;
+    else
+        hasEvent = oldHasEvent;
 }
 void handle_event(SDL_Event& event) {
     switch (event.type) {
@@ -78,9 +90,20 @@ void handle_event(SDL_Event& event) {
         break;
     case SDL_EVENT_MOUSE_MOTION:
         if (SDL_GetMouseState(0, 0) & SDL_BUTTON_MASK(SDL_BUTTON_RIGHT)) {
-            glm::quat rotY(glm::radians(event.motion.xrel*.1f), Transform::up);
-            //glm::quat rotX(glm::radians(event.motion.yrel*.1f), Transform::right);
-            renderer.camera.transform.rotation = rotY* renderer.camera.transform.rotation;
+            Transform& transform = renderer.camera.transform;
+            glm::vec3 rotation = glm::eulerAngles(transform.rotation);
+            rotation.y += -event.motion.xrel * .01f;
+            rotation.x += -event.motion.yrel * .01f;
+            /*
+            glm::quat rotY(glm::radians(-event.motion.xrel), Transform::up);
+            rotY *= renderer.camera.transform.rotation;
+            rotY = glm::slerp(renderer.camera.transform.rotation, rotY, 0.01f);
+            glm::quat rotX(glm::radians(-event.motion.yrel), rotY*Transform::right);
+            rotX *= rotY;
+            rotX = glm::slerp(rotY, rotX, 0.01f);
+            renderer.camera.transform.rotation = rotX;
+            */
+            transform.rotation=glm::quat(rotation);
         }
         break;
     }
@@ -202,7 +225,6 @@ int main(int, char**)
 
     // Main loop
     bool done = false;
-	int hasEvent = 0;
 #ifdef __EMSCRIPTEN__
     // For an Emscripten build we are disabling file-system access, so let's not attempt to do a fopen() of the imgui.ini file.
     // You may manually call LoadIniSettingsFromMemory() to load settings from your own storage.

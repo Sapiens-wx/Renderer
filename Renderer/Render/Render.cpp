@@ -125,6 +125,10 @@ void Renderer::RenderMesh(const Mesh& mesh) {
 	glDisableVertexAttribArray(2);
 	// ½â°ó VAO
 	glBindVertexArray(0);
+	//delete
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
+	glDeleteBuffers(1, &EBO);
 }
 
 void Renderer::Render_VP() {
