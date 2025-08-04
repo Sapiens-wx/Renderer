@@ -58,10 +58,10 @@ void init() {
     glDepthFunc(GL_LESS);
     renderer.Init((float)SCREEN_WIDTH / SCREEN_HEIGHT);
     mesh_monkey.LoadFromFile("Resources\\Mesh\\monkey.obj");
-    mesh_monkey.transform.position = glm::vec3(0, 0, 0);
+    mesh_monkey.transform.position = glm::vec3(0, 0, 3);
     mesh_monkey.transform.SetRotation(glm::vec3(0, 0, 0));
     mesh_cube.LoadFromFile("Resources\\Mesh\\cube.obj");
-    mesh_cube.transform.position = glm::vec3(0, 0, 2);
+    mesh_cube.transform.position = glm::vec3(1000, 0, 2);
     mesh_cube.transform.SetRotation(glm::vec3(0, 0, 0));
 }
 void update() {
@@ -91,19 +91,9 @@ void handle_event(SDL_Event& event) {
     case SDL_EVENT_MOUSE_MOTION:
         if (SDL_GetMouseState(0, 0) & SDL_BUTTON_MASK(SDL_BUTTON_RIGHT)) {
             Transform& transform = renderer.camera.transform;
-            glm::vec3 rotation = glm::eulerAngles(transform.rotation);
-            rotation.y += -event.motion.xrel * .01f;
-            rotation.x += -event.motion.yrel * .01f;
-            /*
-            glm::quat rotY(glm::radians(-event.motion.xrel), Transform::up);
-            rotY *= renderer.camera.transform.rotation;
-            rotY = glm::slerp(renderer.camera.transform.rotation, rotY, 0.01f);
-            glm::quat rotX(glm::radians(-event.motion.yrel), rotY*Transform::right);
-            rotX *= rotY;
-            rotX = glm::slerp(rotY, rotX, 0.01f);
-            renderer.camera.transform.rotation = rotX;
-            */
-            transform.rotation=glm::quat(rotation);
+            glm::quat rotY=glm::angleAxis(glm::radians(-event.motion.xrel), Transform::up);
+            glm::quat rotX=glm::angleAxis(glm::radians(-event.motion.yrel), Transform::right);
+            transform.rotation = rotY * transform.rotation * rotX;
         }
         break;
     }

@@ -2,6 +2,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 //#include <glm/gtx/quaternion.hpp>
 #include <imgui.h>
+#include "../def.h"
 
 const glm::vec3 Transform::up = {0,1,0}, Transform::down = {0,-1,0}, Transform::right = {1,0,0}, Transform::left = {-1,0,0}, Transform::forward = {0,0,1}, Transform::backward = {0,0,-1};
 
@@ -20,9 +21,9 @@ glm::mat4 Transform::World2Local() const {
 
 void Transform::Gui() {
 	if (ImGui::CollapsingHeader("transform", ImGuiTreeNodeFlags_DefaultOpen)) {
-		ImGui::DragFloat3("position", &position.x, .1f);
+		ImGui::DragFloat3("position", &position.x, IM_DRAGFLOAT_SPD);
 		glm::vec3 eularAngles = GetRotationVec();
-		if (ImGui::DragFloat3("rotation", &eularAngles.x, .1f))
+		if (ImGui::DragFloat3("rotation", &eularAngles.x, IM_DRAGFLOAT_SPD))
 			SetRotation(eularAngles);
 	}
 }
