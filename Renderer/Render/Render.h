@@ -5,6 +5,7 @@
 #include "Transform.h"
 
 class Mesh;
+class Shader;
 typedef unsigned int GLuint;
 
 struct Camera {
@@ -18,6 +19,7 @@ public:
 };
 
 class Renderer {
+	friend Shader;
 public:
 	void Init(float aspectRatio);
 	void Render();
@@ -26,7 +28,6 @@ public:
 private:
 	//set up view and projection matrix
 	void Render_VP();
-	void Render_Light();
 	/*
 	void Render_InitBuffer();
 	void Render_ReleaseBuffer();
@@ -38,5 +39,5 @@ private:
 	GLuint shader;
 
 	float aspectRatio;
-	glm::mat4 view, projection;
+	glm::mat4 view, projection, VP;
 };

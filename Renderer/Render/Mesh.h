@@ -5,6 +5,8 @@
 #include <fstream>
 #include "Transform.h"
 
+class Shader;
+
 class Vertex {
 public:
 	Vertex(const glm::vec3 pos) :pos(pos) {}
@@ -26,4 +28,5 @@ public:
 	std::vector<Vertex> vertices;
 	std::vector<int> tris;
 	std::string name;
+	Shader* shader;
 };

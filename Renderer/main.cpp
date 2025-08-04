@@ -30,6 +30,7 @@
 #include "Render/Render.h"
 #include "Render/Mesh.h"
 #include "def.h"
+#include "Render/Shader/Shader.h"
 
 
 namespace im = ImGui;
@@ -40,10 +41,12 @@ int hasEvent = 0;
 constexpr int SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720;
 Renderer renderer;
 Mesh mesh_monkey, mesh_cube;
+Shader_BlinnPhong shader_blinnPhong;
 
 void gui() {
     if (im::Begin("Config")) {
         renderer.Gui();
+        shader_blinnPhong.OnGui();
 		mesh_monkey.Gui();
         mesh_cube.Gui();
     }
@@ -57,12 +60,17 @@ void init() {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     renderer.Init((float)SCREEN_WIDTH / SCREEN_HEIGHT);
+    //load shaders
+    shader_blinnPhong.Load();
+    //load models
     mesh_monkey.LoadFromFile("Resources\\Mesh\\monkey.obj");
     mesh_monkey.transform.position = glm::vec3(0, 0, 3);
     mesh_monkey.transform.SetRotation(glm::vec3(0, 0, 0));
-    mesh_cube.LoadFromFile("Resources\\Mesh\\cube.obj");
+    mesh_monkey.shader = &shader_blinnPhong;
+    mesh_cube.LoadFromFile("Resources\\Mesh\\torus.obj");
     mesh_cube.transform.position = glm::vec3(1000, 0, 2);
     mesh_cube.transform.SetRotation(glm::vec3(0, 0, 0));
+    mesh_cube.shader = &shader_blinnPhong;
 }
 void update() {
     const bool* keys = SDL_GetKeyboardState(NULL);
@@ -86,7 +94,7 @@ void update() {
 void handle_event(SDL_Event& event) {
     switch (event.type) {
     case SDL_EVENT_MOUSE_WHEEL:
-        renderer.camera.transform.position.z-=event.wheel.y;
+        renderer.camera.transform.position-=renderer.camera.transform.Forward()*event.wheel.y;
         break;
     case SDL_EVENT_MOUSE_MOTION:
         if (SDL_GetMouseState(0, 0) & SDL_BUTTON_MASK(SDL_BUTTON_RIGHT)) {

@@ -1,10 +1,11 @@
 #include "Render.h"
 #include "Mesh.h"
-#include "Shader.h"
+#include "Shader/Shader.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <GL/glew.h>
 #include <SDL3/SDL_opengl.h>
+#include <unordered_set>
 #include <imgui.h>
 #undef near
 #undef far
@@ -36,6 +37,7 @@ inline std::ostream& operator<<(std::ostream& stream, glm::mat4 mat) {
 	return stream;
 }
 #pragma endregion
+static std::unordered_set<const Shader*> updatedShaders;
 
 void Camera::Init() {
 	fov = 90;
@@ -58,7 +60,7 @@ void Camera::Gui() {
 void Renderer::Init(float aspectRatio)
 {
 	this->aspectRatio = aspectRatio;
-	shader = Shader::GetDefaultShader();
+	lightDir = glm::vec3(1, 1, 1);
 	camera.Init();
 }
 
@@ -66,27 +68,29 @@ void Renderer::Gui() {
 	if (im::CollapsingHeader("Renderer")) {
 		im::Indent(); camera.Gui(); im::Unindent();
 		im::DragFloat3("lightDir", &lightDir.x, IM_DRAGFLOAT_SPD);
+		im::SliderAngle("lightDir##Angle", &lightDir.x);
 	}
 }
 
 void Renderer::Render() {
-	glUseProgram(shader);
 	Render_VP();
-	Render_Light();
+	updatedShaders.clear();
 }
 
 void Renderer::RenderMesh(const Mesh& mesh) {
 	glm::mat4 model = mesh.transform.Local2World();
 
 	// 获取在 shader 中的 uniform 变量位置
-	GLuint modelLoc = glGetUniformLocation(shader, "model");
-	GLuint viewLoc = glGetUniformLocation(shader, "view");
-	GLuint projectionLoc = glGetUniformLocation(shader, "projection");
+	const Shader* shader = mesh.shader ? mesh.shader : &Shader::GetDefaultShader();
+	glUseProgram(shader->getShader());
+	if (updatedShaders.count(shader) == 0) {
+		shader->UpdateShaderVariables(*this);
+		updatedShaders.insert(shader);
+	}
+	GLuint modelLoc = glGetUniformLocation(shader->getShader(), "model");
 
 	// 在渲染循环中，设置矩阵
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
 	//=========Buffer=========
 	GLuint VBO, VAO, EBO;
@@ -109,8 +113,8 @@ void Renderer::RenderMesh(const Mesh& mesh) {
 
 	// 设置顶点属性指针
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0); // vertex position
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0); // vertex position
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0); // vertex position
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0); // vertex normal
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0); // vertex uv
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
@@ -142,8 +146,6 @@ void Renderer::Render_VP() {
 	projection = glm::perspective(glm::radians(camera.fov),   // 视野角度
 		aspectRatio, // 窗口宽高比
 		camera.near, camera.far); // 近平面与远平面
-}
-void Renderer::Render_Light() {
-	GLint lightLoc = glGetUniformLocation(shader, "lightDir");
-	glUniform3fv(lightLoc, 1, &lightDir.x);
+
+	VP = projection * view;
 }

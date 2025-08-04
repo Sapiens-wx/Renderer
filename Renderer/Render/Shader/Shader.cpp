@@ -1,10 +1,19 @@
 #include <GL/glew.h>
 #include <SDL3/SDL_opengl.h>
 #include <stdio.h>
+#include <imgui.h>
 #include "Shader.h"
-#include "../def.h"
+#include "../Render.h"
+#include "../../def.h"
 #pragma warning(push)
 #pragma warning(disable: 4996)
+//used in UpdateShaderVariables. only get the location from gpu if [uint_loc] is 0
+#define InitLoc(uint_loc, str_name) do{\
+    if(uint_loc==0)\
+        uint_loc = glGetUniformLocation(shaderProgram, str_name);\
+} while(0)
+
+namespace im = ImGui;
 
 #pragma region default shader
 const char* vtxShader3D = R"(
@@ -13,8 +22,7 @@ layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aUV;
 uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+uniform mat4 VP;
 out vec3 FragPos;
 out vec3 Normal;
 out vec2 UV;
@@ -23,7 +31,7 @@ void main()
     FragPos = vec3(model * vec4(aPos, 1.0));
     Normal = mat3(transpose(inverse(model))) * aNormal;
     UV=aUV;
-    gl_Position = projection * view * vec4(FragPos, 1.0);
+    gl_Position = VP * vec4(FragPos, 1.0);
 })";
 
 const char* frgShader3D = R"(
@@ -121,6 +129,7 @@ GLuint Shader::compileShaderFromFile(const char* filename, GLenum type) {
 
     // ¹Ø±ÕÎÄ¼þ
     fclose(file);
+    buffer[fileSize] = 0;
 
     GLuint ret = compileShader(buffer, type);
     free(buffer);
@@ -154,7 +163,7 @@ GLuint Shader::compileShaders(GLuint vertexShader, GLuint fragmentShader) {
     if (!success) {
         char infoLog[512];
         glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
-        std::cerr << "Program linking failed: " << infoLog << std::endl;
+        CERR << "Program linking failed: " << infoLog << '\n';
     }
 
     glDeleteShader(vertexShader);
@@ -168,9 +177,44 @@ GLuint Shader::getShader() const {
     return shaderProgram;
 }
 
-GLuint Shader::GetDefaultShader() {
+const Shader& Shader::GetDefaultShader() {
     if(defaultShader.shaderProgram==NULL)
 		defaultShader.initFromMemory(vtxShader3D, frgShader3D);
-    return defaultShader.getShader();
+    return defaultShader;
+}
+
+void Shader::UpdateShaderVariables(const Renderer& renderer) const {
+    glUseProgram(shaderProgram);
+    //view projection matrix
+    GLuint VPloc=glGetUniformLocation(shaderProgram, "VP");
+    glUniformMatrix4fv(VPloc, 1, GL_FALSE, &renderer.VP[0].x);
+    //view position
+    GLuint viewPos = glGetUniformLocation(shaderProgram, "viewPos");
+    glUniform3fv(viewPos, 1, &renderer.camera.transform.position.x);
+    //light dir
+	GLint lightLoc = glGetUniformLocation(shaderProgram, "lightDir");
+	glUniform3fv(lightLoc, 1, &renderer.lightDir.x);
+}
+void Shader_BlinnPhong::UpdateShaderVariables(const Renderer& renderer) const{
+    Super::UpdateShaderVariables(renderer);
+    InitLoc(roughnessLoc, "fRoughness");
+    InitLoc(diffuseLoc, "v3DiffuseColour");
+    InitLoc(specularLoc, "v3SpecularColour");
+    glUniform1f(roughnessLoc, roughness);
+    glUniform3fv(diffuseLoc, 1, &diffuseColor.x);
+    glUniform3fv(specularLoc, 1, &specularColor.x);
+}
+void Shader_BlinnPhong::Load() {
+    initFromFile("Resources\\Shader\\BP.vert", "Resources\\Shader\\BP.frag");
+    roughness = 2.f;
+    diffuseColor = glm::vec3(1, 1, 1);
+    specularColor = glm::vec3(.5, .5, .5);
+}
+void Shader_BlinnPhong::OnGui(){
+    if (im::CollapsingHeader("Shader_BlinnPhong")) {
+        im::DragFloat("roughness", &roughness);
+        im::ColorEdit3("diffuse", &diffuseColor.x);
+        im::ColorEdit3("specular", &specularColor.x);
+    }
 }
 #pragma warning(pop)
