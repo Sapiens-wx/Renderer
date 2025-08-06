@@ -203,12 +203,18 @@ void Shader_BlinnPhong::UpdateShaderVariables(const Renderer& renderer) const{
     glUniform1f(roughnessLoc, roughness);
     glUniform3fv(diffuseLoc, 1, &diffuseColor.x);
     glUniform3fv(specularLoc, 1, &specularColor.x);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, tex.texID);
 }
 void Shader_BlinnPhong::Load() {
     initFromFile("Resources\\Shader\\BP.vert", "Resources\\Shader\\BP.frag");
     roughness = 2.f;
     diffuseColor = glm::vec3(1, 1, 1);
     specularColor = glm::vec3(.5, .5, .5);
+    tex.LoadFromFile("Resources\\Texture\\tex.png");
+    tex.GLGenTexture();
+    tex.UploadTexture(tex.texID);
 }
 void Shader_BlinnPhong::OnGui(){
     if (im::CollapsingHeader("Shader_BlinnPhong")) {

@@ -19,7 +19,16 @@
     <Filter Include="Render">
       <UniqueIdentifier>{e3967beb-a05f-4ca4-9e53-d0bc402361cb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="glew">
+    <Filter Include="Render\Shader">
+      <UniqueIdentifier>{a9d4cfbd-1cbb-4cf6-8a31-7722ca53f3f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{eaa28698-b548-4ef7-9a60-f6a3366fd4f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shader">
+      <UniqueIdentifier>{cc2270f5-0fcb-4da4-a115-cbc56ab343f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dependencies">
       <UniqueIdentifier>{0c1cfe24-70b7-4408-8cbc-15865e35b9e5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -49,7 +58,7 @@
       <Filter>ImGui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\glew-2.1.0\src\glew.c">
-      <Filter>glew</Filter>
+      <Filter>Dependencies</Filter>
     </ClCompile>
     <ClCompile Include="Render\Mesh.cpp">
       <Filter>Render</Filter>
@@ -60,7 +69,10 @@
     <ClCompile Include="Render\Transform.cpp">
       <Filter>Render</Filter>
     </ClCompile>
-    <ClCompile Include="Render\Shader.cpp">
+    <ClCompile Include="Render\Shader\Shader.cpp">
+      <Filter>Render\Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\Texture.cpp">
       <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
@@ -92,11 +104,25 @@
     <ClInclude Include="Render\Transform.h">
       <Filter>Render</Filter>
     </ClInclude>
-    <ClInclude Include="Render\Shader.h">
-      <Filter>Render</Filter>
-    </ClInclude>
     <ClInclude Include="def.h">
       <Filter>源文件</Filter>
     </ClInclude>
+    <ClInclude Include="Render\Shader\Shader.h">
+      <Filter>Render\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="Dependencies\stb_image.h">
+      <Filter>Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\Texture.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Shader\BP.frag">
+      <Filter>Resources\Shader</Filter>
+    </None>
+    <None Include="Resources\Shader\BP.vert">
+      <Filter>Resources\Shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

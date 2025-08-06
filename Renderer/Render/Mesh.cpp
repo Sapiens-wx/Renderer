@@ -4,7 +4,7 @@
 
 namespace im = ImGui;
 
-bool EndsWith(const char* str1, const char* str2) {
+static bool EndsWith(const char* str1, const char* str2) {
 	size_t len1 = strlen(str1);
     size_t len2 = strlen(str2);
     if (len2 > len1) return false;

@@ -2,6 +2,8 @@
 #define RCPPI 0.31830988618379067f
 #define PI 3.141592653589793238f
 
+layout(binding=0) uniform sampler2D tex;
+
 in vec3 FragPos;
 in vec3 Normal;
 in vec2 UV;
@@ -35,5 +37,5 @@ vec3 blinnPhong(in vec3 v3Normal, in vec3 v3LightDirection, in vec3 v3ViewDirect
 }
 void main()
 {
-    FragColor= vec4(blinnPhong(Normal, lightDir, viewDir, vec3(1.,1.,1.), v3DiffuseColour, v3SpecularColour, fRoughness),1.);
+    FragColor= vec4(blinnPhong(Normal, lightDir, viewDir, texture(tex, UV).xyz, v3DiffuseColour, v3SpecularColour, fRoughness),1.);
 }

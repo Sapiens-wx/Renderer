@@ -76,18 +76,20 @@ void update() {
     const bool* keys = SDL_GetKeyboardState(NULL);
     int oldHasEvent = hasEvent;
     hasEvent = 2;
+    //camera movement
+    const constexpr float camMoveSpd = .1f;
     if (keys[SDL_SCANCODE_A])
-        renderer.camera.transform.position -= renderer.camera.transform.Right() * .3f;
+        renderer.camera.transform.position -= renderer.camera.transform.Right() * camMoveSpd;
     else if (keys[SDL_SCANCODE_D])
-        renderer.camera.transform.position += renderer.camera.transform.Right() * .3f;
+        renderer.camera.transform.position += renderer.camera.transform.Right() * camMoveSpd;
     else if (keys[SDL_SCANCODE_S])
-        renderer.camera.transform.position += renderer.camera.transform.Forward() * .3f;
+        renderer.camera.transform.position += renderer.camera.transform.Forward() * camMoveSpd;
     else if (keys[SDL_SCANCODE_W])
-        renderer.camera.transform.position -= renderer.camera.transform.Forward() * .3f;
+        renderer.camera.transform.position -= renderer.camera.transform.Forward() * camMoveSpd;
     else if (keys[SDL_SCANCODE_Q])
-        renderer.camera.transform.position -= renderer.camera.transform.Up() * .3f;
+        renderer.camera.transform.position -= renderer.camera.transform.Up() * camMoveSpd;
     else if (keys[SDL_SCANCODE_E])
-        renderer.camera.transform.position += renderer.camera.transform.Up() * .3f;
+        renderer.camera.transform.position += renderer.camera.transform.Up() * camMoveSpd;
     else
         hasEvent = oldHasEvent;
 }

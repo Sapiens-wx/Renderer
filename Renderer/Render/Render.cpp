@@ -121,7 +121,8 @@ void Renderer::RenderMesh(const Mesh& mesh) {
 
 	//========Render========
 	// 在渲染循环中使用 VAO 和着色器渲染立方体
-	glDrawElements(GL_TRIANGLES, mesh.tris.size(), GL_UNSIGNED_INT, 0);  // 渲染立方体
+	//glDrawElements(GL_TRIANGLES, mesh.tris.size(), GL_UNSIGNED_INT, 0);  // 渲染立方体
+	glDrawElements(GL_TRIANGLES, mesh.tris.size(), GL_UNSIGNED_INT, 0);
 
 	//disable
 	glDisableVertexAttribArray(0);
