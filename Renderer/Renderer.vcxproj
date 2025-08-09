@@ -132,12 +132,14 @@
     <ClCompile Include="..\..\glew-2.1.0\src\glew.c" />
     <ClCompile Include="..\..\imgui\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="..\..\imgui\backends\imgui_impl_sdl3.cpp" />
+    <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
+    <ClCompile Include="Render\Gizmos.cpp" />
     <ClCompile Include="Render\Mesh.cpp" />
     <ClCompile Include="Render\Render.cpp" />
     <ClCompile Include="Render\Shader\Shader.cpp" />
@@ -147,12 +149,15 @@
   <ItemGroup>
     <ClInclude Include="def.h" />
     <ClInclude Include="Dependencies\stb_image.h" />
+    <ClInclude Include="Geometry.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
     <ClInclude Include="imgui\imgui_internal.h" />
     <ClInclude Include="imgui\imstb_rectpack.h" />
     <ClInclude Include="imgui\imstb_textedit.h" />
     <ClInclude Include="imgui\imstb_truetype.h" />
+    <ClInclude Include="Render\Color.h" />
+    <ClInclude Include="Render\Gizmos.h" />
     <ClInclude Include="Render\Mesh.h" />
     <ClInclude Include="Render\Render.h" />
     <ClInclude Include="Render\Shader\Shader.h" />
@@ -162,6 +167,10 @@
   <ItemGroup>
     <None Include="Resources\Shader\BP.frag" />
     <None Include="Resources\Shader\BP.vert" />
+    <None Include="Resources\Shader\Unlit.frag" />
+    <None Include="Resources\Shader\Unlit.vert" />
+    <None Include="Resources\Shader\Unlit_Texture.frag" />
+    <None Include="Resources\Shader\Unlit_Texture.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

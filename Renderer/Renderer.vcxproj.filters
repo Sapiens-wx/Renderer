@@ -75,6 +75,12 @@
     <ClCompile Include="Render\Texture.cpp">
       <Filter>Render</Filter>
     </ClCompile>
+    <ClCompile Include="Render\Gizmos.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Geometry.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imgui\imconfig.h">
@@ -116,12 +122,33 @@
     <ClInclude Include="Render\Texture.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="Render\Gizmos.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\Color.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Geometry.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Shader\BP.frag">
       <Filter>Resources\Shader</Filter>
     </None>
     <None Include="Resources\Shader\BP.vert">
+      <Filter>Resources\Shader</Filter>
+    </None>
+    <None Include="Resources\Shader\Unlit.frag">
+      <Filter>Resources\Shader</Filter>
+    </None>
+    <None Include="Resources\Shader\Unlit.vert">
+      <Filter>Resources\Shader</Filter>
+    </None>
+    <None Include="Resources\Shader\Unlit_Texture.vert">
+      <Filter>Resources\Shader</Filter>
+    </None>
+    <None Include="Resources\Shader\Unlit_Texture.frag">
       <Filter>Resources\Shader</Filter>
     </None>
   </ItemGroup>

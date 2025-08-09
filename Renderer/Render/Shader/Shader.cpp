@@ -86,6 +86,7 @@ void main()
 
 Shader defaultShader;
 #pragma endregion
+std::unique_ptr<Shader_Unlit> Shader_Unlit::inst;
 
 Shader::Shader() :shaderProgram(NULL)
 {}
@@ -187,16 +188,21 @@ void Shader::UpdateShaderVariables(const Renderer& renderer) const {
     glUseProgram(shaderProgram);
     //view projection matrix
     GLuint VPloc=glGetUniformLocation(shaderProgram, "VP");
-    glUniformMatrix4fv(VPloc, 1, GL_FALSE, &renderer.VP[0].x);
+    glUniformMatrix4fv(VPloc, 1, GL_FALSE, &renderer.camera.VP[0].x);
     //view position
     GLuint viewPos = glGetUniformLocation(shaderProgram, "viewPos");
     glUniform3fv(viewPos, 1, &renderer.camera.transform.position.x);
     //light dir
 	GLint lightLoc = glGetUniformLocation(shaderProgram, "lightDir");
-	glUniform3fv(lightLoc, 1, &renderer.lightDir.x);
+    if (lightLoc)
+        glUniform3fv(lightLoc, 1, &renderer.lightDir.x);
+    else
+        CWARN << "lightLoc not found\n";
 }
+Shader_BlinnPhong::Shader_BlinnPhong(): tex(nullptr)
+{}
 void Shader_BlinnPhong::UpdateShaderVariables(const Renderer& renderer) const{
-    Super::UpdateShaderVariables(renderer);
+    Base::UpdateShaderVariables(renderer);
     InitLoc(roughnessLoc, "fRoughness");
     InitLoc(diffuseLoc, "v3DiffuseColour");
     InitLoc(specularLoc, "v3SpecularColour");
@@ -205,16 +211,13 @@ void Shader_BlinnPhong::UpdateShaderVariables(const Renderer& renderer) const{
     glUniform3fv(specularLoc, 1, &specularColor.x);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, tex.texID);
+    glBindTexture(GL_TEXTURE_2D, tex->GetID());
 }
 void Shader_BlinnPhong::Load() {
     initFromFile("Resources\\Shader\\BP.vert", "Resources\\Shader\\BP.frag");
     roughness = 2.f;
     diffuseColor = glm::vec3(1, 1, 1);
     specularColor = glm::vec3(.5, .5, .5);
-    tex.LoadFromFile("Resources\\Texture\\tex.png");
-    tex.GLGenTexture();
-    tex.UploadTexture(tex.texID);
 }
 void Shader_BlinnPhong::OnGui(){
     if (im::CollapsingHeader("Shader_BlinnPhong")) {
@@ -222,5 +225,30 @@ void Shader_BlinnPhong::OnGui(){
         im::ColorEdit3("diffuse", &diffuseColor.x);
         im::ColorEdit3("specular", &specularColor.x);
     }
+}
+
+Shader_Unlit& Shader_Unlit::Get() {
+    if (inst == nullptr) {
+        inst = std::make_unique<Shader_Unlit>();
+        inst->Load();
+    }
+    return *inst;
+}
+void Shader_Unlit::Load() {
+    initFromFile("Resources\\Shader\\Unlit.vert", "Resources\\Shader\\Unlit.frag");
+}
+void Shader_Unlit::UpdateShaderVariables(const Renderer& renderer) const {
+    Base::UpdateShaderVariables(renderer);
+}
+
+Shader_Unlit_Texture::Shader_Unlit_Texture() : texture(nullptr)
+{}
+void Shader_Unlit_Texture::Load() {
+    initFromFile("Resources\\Shader\\Unlit_Texture.vert", "Resources\\Shader\\Unlit_Texture.frag");
+}
+void Shader_Unlit_Texture::UpdateShaderVariables(const Renderer& renderer) const {
+    Base::UpdateShaderVariables(renderer);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture->GetID());
 }
 #pragma warning(pop)

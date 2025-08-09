@@ -14,7 +14,7 @@ public:
 public:
 	glm::vec3 pos;
 	glm::vec2 uv;
-	glm::vec2 normal;
+	glm::vec3 normal;
 };
 
 class Mesh {

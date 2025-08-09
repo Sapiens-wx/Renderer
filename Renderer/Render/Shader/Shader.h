@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
+#include <memory>
 #include "../Texture.h"
 
 typedef unsigned int GLenum;
@@ -36,10 +37,11 @@ protected:
 
 class Shader_BlinnPhong : public Shader {
 public:
+	Shader_BlinnPhong();
 	void UpdateShaderVariables(const Renderer& renderer) const override;
 	void OnGui() override;
 	void Load() override;
-	Texture tex;
+	RenderTexture* tex;
 private:
 	mutable float roughness; mutable GLuint roughnessLoc;
 	mutable glm::vec3 diffuseColor, specularColor; mutable GLuint diffuseLoc, specularLoc;
@@ -47,6 +49,18 @@ private:
 
 class Shader_Unlit : public Shader {
 public:
+	static Shader_Unlit& Get();
 	void UpdateShaderVariables(const Renderer& renderer) const override;
 	void Load() override;
+private:
+	static std::unique_ptr<Shader_Unlit> inst;
+};
+
+class Shader_Unlit_Texture : public Shader {
+public:
+	Shader_Unlit_Texture();
+	void UpdateShaderVariables(const Renderer& renderer) const override;
+	void Load() override;
+public:
+	RenderTexture* texture;
 };

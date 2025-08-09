@@ -1,12 +1,12 @@
-#include "Render.h"
-#include "Mesh.h"
-#include "Shader/Shader.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <GL/glew.h>
 #include <SDL3/SDL_opengl.h>
-#include <unordered_set>
 #include <imgui.h>
+#include "Render.h"
+#include "Mesh.h"
+#include "Shader/Shader.h"
+#include "Gizmos.h"
 #undef near
 #undef far
 #include "../def.h"
@@ -37,9 +37,11 @@ inline std::ostream& operator<<(std::ostream& stream, glm::mat4 mat) {
 	return stream;
 }
 #pragma endregion
-static std::unordered_set<const Shader*> updatedShaders;
 
-void Camera::Init() {
+void Camera::Init(int w, int h) {
+	width = w;
+	height = h;
+	aspectRatio = float(w) / h;
 	fov = 90;
 	near = 0.1;
 	far = 1000;
@@ -57,11 +59,55 @@ void Camera::Gui() {
 	}
 }
 
-void Renderer::Init(float aspectRatio)
+glm::vec3 Camera::Screen2WorldPoint(int x, int y) {
+	glm::vec3 forward = transform.Forward();
+	glm::vec3 right = transform.Right();
+	glm::vec3 up = glm::cross(right, forward);
+	//[-1,1] range
+	float fx = (x << 1) / width - 1.f, fy = (y << 2) / height - 1.f;
+	float tanx = glm::tan(fov / 2.f);
+	//actual value in the world space
+	fx *= tanx * near;
+	fy *= tanx * near / aspectRatio;
+	return glm::vec3(transform.position + forward * near + right * fx + up * fy);
+}
+
+void Renderer::Init(int width, int height)
 {
-	this->aspectRatio = aspectRatio;
+	SetGLOpaque();
+	this->width = width;
+	this->height = height;
 	lightDir = glm::vec3(1, 1, 1);
-	camera.Init();
+	camera.Init(width, height);
+	//depth texture staff
+	depthTexture.Create(width, height, GL_UNSIGNED_BYTE, nullptr, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT);
+	//frame buffer staff
+	glGenFramebuffers(1, &framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture.GetID(), 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		CERR << "Framebuffer is not complete\n";
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Renderer::SetGLTransparent() {
+    glEnable(GL_BLEND);
+    glBlendEquation(GL_FUNC_ADD);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    //glDisable(GL_CULL_FACE);
+    //glDisable(GL_DEPTH_TEST);
+    glDisable(GL_STENCIL_TEST);
+}
+void Renderer::SetGLOpaque() {
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+	glDisable(GL_BLEND);
 }
 
 void Renderer::Gui() {
@@ -73,8 +119,15 @@ void Renderer::Gui() {
 }
 
 void Renderer::Render() {
-	Render_VP();
-	updatedShaders.clear();
+	camera.SetupVP();
+	RenderObjects();
+}
+
+void Renderer::RenderDepthTexture() {
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	RenderObjects();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void Renderer::RenderMesh(const Mesh& mesh) {
@@ -83,10 +136,7 @@ void Renderer::RenderMesh(const Mesh& mesh) {
 	// 获取在 shader 中的 uniform 变量位置
 	const Shader* shader = mesh.shader ? mesh.shader : &Shader::GetDefaultShader();
 	glUseProgram(shader->getShader());
-	if (updatedShaders.count(shader) == 0) {
-		shader->UpdateShaderVariables(*this);
-		updatedShaders.insert(shader);
-	}
+	shader->UpdateShaderVariables(*this);
 	GLuint modelLoc = glGetUniformLocation(shader->getShader(), "model");
 
 	// 在渲染循环中，设置矩阵
@@ -112,9 +162,9 @@ void Renderer::RenderMesh(const Mesh& mesh) {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*mesh.tris.size(), mesh.tris.data(), GL_STATIC_DRAW);
 
 	// 设置顶点属性指针
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0); // vertex position
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0); // vertex normal
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0); // vertex uv
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, pos)); // vertex position
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, normal)); // vertex normal
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, uv)); // vertex uv
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
@@ -135,18 +185,64 @@ void Renderer::RenderMesh(const Mesh& mesh) {
 	glDeleteBuffers(1, &VBO);
 	glDeleteBuffers(1, &EBO);
 }
+void Renderer::RenderGizmos(Gizmos& gizmos) {
+	glm::mat4 model = glm::mat4(1);
 
-void Renderer::Render_VP() {
+	// 获取在 shader 中的 uniform 变量位置
+	const Shader* shader = &Shader_Unlit::Get();
+	glUseProgram(shader->getShader());
+	shader->UpdateShaderVariables(*this);
+	GLuint modelLoc = glGetUniformLocation(shader->getShader(), "model");
+
+	// 在渲染循环中，设置矩阵
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+	//=========Buffer=========
+	GLuint VBO, VAO;
+
+	// 创建 VAO、VBO 和 EBO
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+
+	// 绑定 VAO
+	glBindVertexArray(VAO);
+
+	// 绑定 VBO，上传顶点数据
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GizmosVertex)*gizmos.vertices.size(), gizmos.vertices.data(), GL_STATIC_DRAW);
+
+	// 设置顶点属性指针
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GizmosVertex), (const GLvoid*)offsetof(GizmosVertex, pos)); // vertex position
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GizmosVertex), (const GLvoid*)offsetof(GizmosVertex, color)); // vertex normal
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+
+	//========Render========
+	// 在渲染循环中使用 VAO 和着色器渲染立方体
+	//glDrawElements(GL_TRIANGLES, mesh.tris.size(), GL_UNSIGNED_INT, 0);  // 渲染立方体
+	glDrawArrays(GL_LINES, 0, gizmos.vertices.size());
+
+	//disable
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+	// 解绑 VAO
+	glBindVertexArray(0);
+	//delete
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
+}
+
+void Camera::SetupVP() {
 	// 视图矩阵（摄像机位置）
-	view = glm::lookAt(camera.transform.position,   // 摄像机位置
+	view = glm::lookAt(transform.position,   // 摄像机位置
 		glm::vec3(0.0f, 0.0f, 0.0f),   // 目标点
 		glm::vec3(0.0f, 1.0f, 0.0f));  // 上向量
-	view = camera.transform.World2Local();
+	view = transform.World2Local();
 
 	// 投影矩阵（透视投影）
-	projection = glm::perspective(glm::radians(camera.fov),   // 视野角度
+	projection = glm::perspective(glm::radians(fov),   // 视野角度
 		aspectRatio, // 窗口宽高比
-		camera.near, camera.far); // 近平面与远平面
+		near, far); // 近平面与远平面
 
 	VP = projection * view;
 }

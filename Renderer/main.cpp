@@ -31,7 +31,8 @@
 #include "Render/Mesh.h"
 #include "def.h"
 #include "Render/Shader/Shader.h"
-
+#include "Render/Gizmos.h"
+#include "Geometry.h"
 
 namespace im = ImGui;
 
@@ -40,37 +41,57 @@ int hasEvent = 0;
 //render
 constexpr int SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720;
 Renderer renderer;
-Mesh mesh_monkey, mesh_cube;
+Gizmos gm;
+Mesh mesh_monkey, mesh_cube, mesh_quad;
 Shader_BlinnPhong shader_blinnPhong;
+Shader_Unlit_Texture shader_unlit_tex;
+Texture tex_test;
 
 void gui() {
     if (im::Begin("Config")) {
+		float mouseX, mouseY;
+		SDL_GetMouseState(&mouseX, &mouseY);
+        im::Text("%.1f,%.1f", mouseX, mouseY);
         renderer.Gui();
         shader_blinnPhong.OnGui();
 		mesh_monkey.Gui();
         mesh_cube.Gui();
+        mesh_quad.Gui();
     }
     im::End();
 }
 void init() {
     glewInit();
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CCW);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-    renderer.Init((float)SCREEN_WIDTH / SCREEN_HEIGHT);
+    renderer.Init(SCREEN_WIDTH, SCREEN_HEIGHT);
+    //load textures
+    tex_test.LoadFromFile("Resources\\Texture\\tex.png");
     //load shaders
     shader_blinnPhong.Load();
+    shader_blinnPhong.tex = &tex_test.renderTex;
+    shader_unlit_tex.Load();
+    shader_unlit_tex.texture = &renderer.depthTexture;
     //load models
     mesh_monkey.LoadFromFile("Resources\\Mesh\\monkey.obj");
     mesh_monkey.transform.position = glm::vec3(0, 0, 3);
     mesh_monkey.transform.SetRotation(glm::vec3(0, 0, 0));
     mesh_monkey.shader = &shader_blinnPhong;
     mesh_cube.LoadFromFile("Resources\\Mesh\\torus.obj");
-    mesh_cube.transform.position = glm::vec3(1000, 0, 2);
+    mesh_cube.transform.position = glm::vec3(3, 0, 2);
     mesh_cube.transform.SetRotation(glm::vec3(0, 0, 0));
     mesh_cube.shader = &shader_blinnPhong;
+    mesh_quad.LoadFromFile("Resources\\Mesh\\quad.obj");
+    mesh_quad.transform.position = glm::vec3(-3, 0, 1);
+    mesh_quad.transform.SetRotation(glm::vec3(0, 0, 0));
+    mesh_quad.shader = &shader_unlit_tex;
+    mesh_quad.name = "quad";
+    //setup RenderObjects callback
+    renderer.RenderObjects = []() {
+		renderer.SetGLOpaque();
+		renderer.RenderMesh(mesh_monkey);
+		renderer.RenderMesh(mesh_cube);
+        renderer.RenderMesh(mesh_quad);
+        renderer.RenderGizmos(gm);
+        };
 }
 void update() {
     const bool* keys = SDL_GetKeyboardState(NULL);
@@ -92,6 +113,10 @@ void update() {
         renderer.camera.transform.position += renderer.camera.transform.Up() * camMoveSpd;
     else
         hasEvent = oldHasEvent;
+    gm.BeginFrame();
+    float mouseX, mouseY;
+    SDL_GetMouseState(&mouseX, &mouseY);
+    gm.AddLine(renderer.camera.Screen2WorldPoint(mouseX, mouseY), glm::vec3(0, 0, 0));
 }
 void handle_event(SDL_Event& event) {
     switch (event.type) {
@@ -110,8 +135,7 @@ void handle_event(SDL_Event& event) {
 }
 void draw() {
     renderer.Render();
-    renderer.RenderMesh(mesh_monkey);
-    renderer.RenderMesh(mesh_cube);
+    renderer.RenderDepthTexture();
 }
 
 // Main code
@@ -249,7 +273,7 @@ int main(int, char**)
                 done = true;
             if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(window))
                 done = true;
-            else
+            else if(!(io.WantCaptureKeyboard||io.WantCaptureMouse))
                 handle_event(event);
         }
 

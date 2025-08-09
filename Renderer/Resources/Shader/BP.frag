@@ -28,8 +28,8 @@ vec3 blinnPhong(in vec3 v3Normal, in vec3 v3LightDirection, in vec3 v3ViewDirect
     vec3 v3Specular = pow(max(dot(v3Normal, v3HalfVector), 0.0f), fRoughness) * (fRoughness+8.)/(8.*PI) * v3SpecularColour;
 
     // Combine diffuse and specular
-    float diffuseStr=0.6;
-    vec3 v3RetColour = v3Diffuse + v3Specular;
+    float diffuseStr=3.;
+    vec3 v3RetColour = v3Diffuse*diffuseStr + v3Specular;
  
     // Combine with incoming light value
     v3RetColour *= v3LightIrradiance;
@@ -37,5 +37,6 @@ vec3 blinnPhong(in vec3 v3Normal, in vec3 v3LightDirection, in vec3 v3ViewDirect
 }
 void main()
 {
-    FragColor= vec4(blinnPhong(Normal, lightDir, viewDir, texture(tex, UV).xyz, v3DiffuseColour, v3SpecularColour, fRoughness),1.);
+    vec3 texColor=texture(tex, UV).xyz;
+    FragColor= vec4(blinnPhong(Normal, lightDir, viewDir, texColor, v3DiffuseColour, v3SpecularColour, fRoughness),.5);
 }

@@ -21,6 +21,18 @@ void Mesh::Gui() {
 		im::PushID(name.c_str());
 		im::Indent();
 		transform.Gui();
+		if (im::CollapsingHeader("Vertex Info")) {
+			im::Indent();
+			for (Vertex& vert : vertices) {
+				im::PushID(&vert);
+				if (im::CollapsingHeader("Vertex")) {
+					im::DragFloat3("pos", &vert.pos.x, IM_DRAGFLOAT_SPD);
+					im::DragFloat2("uv", &vert.uv.x, IM_DRAGFLOAT_SPD);
+				}
+				im::PopID();
+			}
+			im::Unindent();
+		}
 		im::Unindent();
 		im::PopID();
 	}
@@ -42,6 +54,7 @@ void Mesh::LoadFromFile_Obj(std::ifstream& file) {
 	std::string line;
 	std::vector<glm::vec3> normals;
 	std::vector<glm::vec2> uvs;
+	vertices.clear();
 	while (std::getline(file, line)) {
 		float x, y, z;
 		if (line.size()&&line[0] == 'v') {
