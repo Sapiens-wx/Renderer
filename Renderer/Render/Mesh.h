@@ -4,6 +4,7 @@
 #include <string>
 #include <fstream>
 #include "Transform.h"
+#include "../Geometry.h"
 
 class Shader;
 
@@ -22,6 +23,10 @@ public:
 	Mesh();
 	void Gui();
 	void LoadFromFile(const char* path);
+	//update min/max of the bounds
+	void UpdateBounds();
+	inline Bounds GlobalBounds();
+private:
 	void LoadFromFile_Obj(std::ifstream& file);
 public:
 	Transform transform;
@@ -29,4 +34,11 @@ public:
 	std::vector<int> tris;
 	std::string name;
 	Shader* shader;
+	Bounds bounds;
 };
+
+Bounds Mesh::GlobalBounds() {
+	Bounds ret(bounds);
+	ret.SetCenter(transform.position);
+	return ret;
+}

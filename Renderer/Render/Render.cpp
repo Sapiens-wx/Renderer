@@ -60,16 +60,21 @@ void Camera::Gui() {
 }
 
 glm::vec3 Camera::Screen2WorldPoint(int x, int y) {
-	glm::vec3 forward = transform.Forward();
+	glm::vec3 forward = -transform.Forward();
 	glm::vec3 right = transform.Right();
 	glm::vec3 up = glm::cross(right, forward);
 	//[-1,1] range
-	float fx = (x << 1) / width - 1.f, fy = (y << 2) / height - 1.f;
-	float tanx = glm::tan(fov / 2.f);
+	float fx = (x << 1) / width - 1.f, fy = (y << 1) / height - 1.f;
+	float tanx = glm::tan(glm::radians(fov) / 2.f);
 	//actual value in the world space
-	fx *= tanx * near;
-	fy *= tanx * near / aspectRatio;
-	return glm::vec3(transform.position + forward * near + right * fx + up * fy);
+	fx *= tanx * near * aspectRatio;
+	fy *= tanx * near ;
+	return glm::vec3(transform.position + forward * near + right * fx - up * fy);
+}
+
+Ray Camera::Screen2WorldRay(int x, int y) {
+	glm::vec3 dir = glm::normalize(Screen2WorldPoint(x, y) - transform.position);
+	return Ray(transform.position, dir);
 }
 
 void Renderer::Init(int width, int height)

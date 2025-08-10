@@ -36,40 +36,43 @@
 
 namespace im = ImGui;
 
+//actual size of the window
+int windowWidth, windowHeight;
 //event related
 int hasEvent = 0;
 //render
 constexpr int SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720;
 Renderer renderer;
 Gizmos gm;
-Mesh mesh_monkey, mesh_cube, mesh_quad;
+Mesh mesh_monkey, mesh_cube, mesh_quad, mesh_invCube;
 Shader_BlinnPhong shader_blinnPhong;
-Shader_Unlit_Texture shader_unlit_tex;
-Texture tex_test;
+Shader_Unlit_Texture shader_unlit_tex, shader_skybox;
+Texture tex_test, tex_skyBox;
 
 void gui() {
     if (im::Begin("Config")) {
-		float mouseX, mouseY;
-		SDL_GetMouseState(&mouseX, &mouseY);
-        im::Text("%.1f,%.1f", mouseX, mouseY);
         renderer.Gui();
         shader_blinnPhong.OnGui();
 		mesh_monkey.Gui();
         mesh_cube.Gui();
         mesh_quad.Gui();
+        mesh_invCube.Gui();
     }
     im::End();
 }
 void init() {
     glewInit();
-    renderer.Init(SCREEN_WIDTH, SCREEN_HEIGHT);
+    renderer.Init(windowWidth, windowHeight);
     //load textures
     tex_test.LoadFromFile("Resources\\Texture\\tex.png");
+    tex_skyBox.LoadFromFile("Resources\\Texture\\skybox.png");
     //load shaders
     shader_blinnPhong.Load();
     shader_blinnPhong.tex = &tex_test.renderTex;
     shader_unlit_tex.Load();
     shader_unlit_tex.texture = &renderer.depthTexture;
+    shader_skybox.Load();
+    shader_skybox.texture = &tex_skyBox.renderTex;
     //load models
     mesh_monkey.LoadFromFile("Resources\\Mesh\\monkey.obj");
     mesh_monkey.transform.position = glm::vec3(0, 0, 3);
@@ -84,11 +87,18 @@ void init() {
     mesh_quad.transform.SetRotation(glm::vec3(0, 0, 0));
     mesh_quad.shader = &shader_unlit_tex;
     mesh_quad.name = "quad";
+    mesh_invCube.LoadFromFile("Resources\\Mesh\\invcube.obj");
+    mesh_invCube.transform.position = glm::vec3(0, 0, 0);
+    mesh_invCube.transform.scale = glm::vec3(100, 100, 100);
+    mesh_invCube.transform.SetRotation(glm::vec3(0, 0, 0));
+    mesh_invCube.shader = &shader_skybox;
+    mesh_invCube.name = "inv cube";
     //setup RenderObjects callback
     renderer.RenderObjects = []() {
 		renderer.SetGLOpaque();
 		renderer.RenderMesh(mesh_monkey);
 		renderer.RenderMesh(mesh_cube);
+        renderer.RenderMesh(mesh_invCube);
         renderer.RenderMesh(mesh_quad);
         renderer.RenderGizmos(gm);
         };
@@ -116,7 +126,7 @@ void update() {
     gm.BeginFrame();
     float mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
-    gm.AddLine(renderer.camera.Screen2WorldPoint(mouseX, mouseY), glm::vec3(0, 0, 0));
+    gm.AddBounds(mesh_monkey.GlobalBounds());
 }
 void handle_event(SDL_Event& event) {
     switch (event.type) {
@@ -245,6 +255,7 @@ int main(int, char**)
     bool show_demo_window = true;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    SDL_GetWindowSizeInPixels(window, &windowWidth, &windowHeight);
     init();
 
     // Main loop

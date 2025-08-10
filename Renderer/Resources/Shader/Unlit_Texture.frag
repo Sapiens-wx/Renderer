@@ -12,9 +12,5 @@ out vec4 FragColor;
 
 void main()
 {
-    float near=0.1, far=1000.;
-    float depth=texture(tex, UV).x;
-    //depth=near*far/(far-(depth*(far-near)));
-    //depth=fract(depth);
-    FragColor= vec4(depth, depth, depth, 1.);
+    FragColor= texture(tex, UV);
 }

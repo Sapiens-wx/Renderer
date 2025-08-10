@@ -18,6 +18,7 @@ struct Camera {
 	//set up view and projection matrix
 	void SetupVP();
 	glm::vec3 Screen2WorldPoint(int x, int y);
+	Ray Screen2WorldRay(int x, int y);
 public:
 	Transform transform;
 	float near, far;

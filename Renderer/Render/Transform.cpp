@@ -8,13 +8,19 @@ const glm::vec3 Transform::up = {0,1,0}, Transform::down = {0,-1,0}, Transform::
 
 glm::mat4 Transform::Local2World() const {
 	glm::mat4 model = glm::mat4(1);
-	model = GetRotationMat();
+	model[0].x = scale.x;
+	model[1].y = scale.y;
+	model[2].z = scale.z;
+	model = GetRotationMat() * model;
 	model[3] = glm::vec4(position, 1);
 	return model;
 }
 glm::mat4 Transform::World2Local() const {
 	glm::mat4 model = glm::mat4(1);
-	model = GetRotationMat();
+	model[0].x = scale.x;
+	model[1].y = scale.y;
+	model[2].z = scale.z;
+	model = GetRotationMat() * model;
 	model[3] = glm::vec4(position, 1);
 	return glm::inverse(model);
 }
@@ -22,6 +28,7 @@ glm::mat4 Transform::World2Local() const {
 void Transform::Gui() {
 	if (ImGui::CollapsingHeader("transform", ImGuiTreeNodeFlags_DefaultOpen)) {
 		ImGui::DragFloat3("position", &position.x, IM_DRAGFLOAT_SPD);
+		ImGui::DragFloat3("scale", &scale.x, IM_DRAGFLOAT_SPD);
 		glm::vec3 eularAngles = GetRotationVec();
 		if (ImGui::DragFloat3("rotation", &eularAngles.x, IM_DRAGFLOAT_SPD))
 			SetRotation(eularAngles);

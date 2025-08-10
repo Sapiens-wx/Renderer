@@ -48,6 +48,7 @@ void Mesh::LoadFromFile(const char* path) {
 	if (EndsWith(path, ".obj"))
 		LoadFromFile_Obj(stream);
 	stream.close();
+	UpdateBounds();
 }
 
 void Mesh::LoadFromFile_Obj(std::ifstream& file) {
@@ -106,5 +107,15 @@ void Mesh::LoadFromFile_Obj(std::ifstream& file) {
 				vertices[v4].normal = normals[n4];
 			}
 		}
+	}
+}
+
+void Mesh::UpdateBounds() {
+	if (vertices.empty()) return;
+	bounds.min = vertices.front().pos;
+	bounds.max = bounds.min;
+	for (const Vertex& v : vertices) {
+		bounds.min = glm::min(bounds.min, v.pos);
+		bounds.max = glm::max(bounds.max, v.pos);
 	}
 }

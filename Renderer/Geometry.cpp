@@ -43,3 +43,15 @@ bool Bounds::Intersect(const Bounds& other) {
 
 	return true;
 }
+
+void Bounds::SetCenter(const glm::vec3& center) {
+	glm::vec3 offset = center - Center();
+	min += offset;
+	max += offset;
+}
+
+void Bounds::SetSize(const glm::vec3& size) {
+	glm::vec3 offset = (size - Size())/2.f;
+	min -= offset;
+	max += offset;
+}

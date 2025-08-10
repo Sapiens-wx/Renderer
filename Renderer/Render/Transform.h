@@ -4,6 +4,7 @@
 
 class Transform {
 public:
+	Transform() :scale(1, 1, 1) {}
 	void Gui();
 	inline glm::mat4 GetRotationMat() const;
 	//get rotation in degrees
@@ -19,6 +20,7 @@ public:
 public:
 	glm::vec3 position;
 	glm::quat rotation;
+	glm::vec3 scale;
 public:
 	static const glm::vec3 up, down, right, left, forward, backward;
 };
