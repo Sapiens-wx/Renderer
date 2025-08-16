@@ -16,10 +16,11 @@ struct GizmosVertex {
 class Gizmos {
 	friend Renderer;
 public:
-	void AddLine(const glm::vec3& p1, const glm::vec3& p2, Color color=Color::White);
-	void AddBounds(const Bounds& bounds, Color color=Color::White);
+	static void AddLine(const glm::vec3& p1, const glm::vec3& p2, Color color=Color::White);
+	static void AddBounds(const Bounds& bounds, Color color=Color::White);
+	static Gizmos& Get();
 	//clears vertices
-	inline void BeginFrame() { vertices.clear(); }
+	static inline void BeginFrame() { Gizmos::Get().vertices.clear(); }
 private:
 	std::vector<GizmosVertex> vertices;
 };

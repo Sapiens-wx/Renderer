@@ -31,6 +31,9 @@
     <Filter Include="Dependencies">
       <UniqueIdentifier>{0c1cfe24-70b7-4408-8cbc-15865e35b9e5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Editor">
+      <UniqueIdentifier>{7a061b10-6cf3-454d-80c3-a78e7cf909c2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -81,6 +84,9 @@
     <ClCompile Include="Geometry.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Editor\Handles.cpp">
+      <Filter>Editor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imgui\imconfig.h">
@@ -130,6 +136,9 @@
     </ClInclude>
     <ClInclude Include="Geometry.h">
       <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\Handles.h">
+      <Filter>Editor</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

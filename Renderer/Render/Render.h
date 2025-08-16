@@ -40,6 +40,7 @@ public:
 	void RenderGizmos(Gizmos& gizmos);
 	void RenderDepthTexture();
 	void Gui();
+	static Renderer& Get();
 private:
 	/*
 	void Render_InitBuffer();

@@ -132,6 +132,7 @@
     <ClCompile Include="..\..\glew-2.1.0\src\glew.c" />
     <ClCompile Include="..\..\imgui\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="..\..\imgui\backends\imgui_impl_sdl3.cpp" />
+    <ClCompile Include="Editor\Handles.cpp" />
     <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
@@ -149,6 +150,7 @@
   <ItemGroup>
     <ClInclude Include="def.h" />
     <ClInclude Include="Dependencies\stb_image.h" />
+    <ClInclude Include="Editor\Handles.h" />
     <ClInclude Include="Geometry.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />

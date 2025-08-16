@@ -8,6 +8,13 @@ public:
 	Ray() = default;
 	Ray(const glm::vec3& origin, const glm::vec3& dir) :origin(origin), dir(dir) {}
 	bool Intersect(const Bounds& bounds);
+	bool IntersectLineSegment(const glm::vec3& a, const glm::vec3& b, const float dist);
+	// @return a normalized value indicating where the ray hits at the line (with a tolerance of dist)
+	float IntersectAtLineSegment(const glm::vec3& a, const glm::vec3& b);
+	// @return a point on the line indicating where the ray hits at the line (with a tolerance of dist)
+	glm::vec3 IntersectPointAtLineSegment(const glm::vec3& a, const glm::vec3& b);
+	// @return the *squared* distance of the ray and segment
+	float DistSqrRaySegment(const glm::vec3& a, const glm::vec3& b);
 public:
 	glm::vec3 origin;
 	glm::vec3 dir;

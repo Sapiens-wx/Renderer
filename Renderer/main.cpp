@@ -33,6 +33,7 @@
 #include "Render/Shader/Shader.h"
 #include "Render/Gizmos.h"
 #include "Geometry.h"
+#include "Editor/Handles.h"
 
 namespace im = ImGui;
 
@@ -43,7 +44,6 @@ int hasEvent = 0;
 //render
 constexpr int SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720;
 Renderer renderer;
-Gizmos gm;
 Mesh mesh_monkey, mesh_cube, mesh_quad, mesh_invCube;
 Shader_BlinnPhong shader_blinnPhong;
 Shader_Unlit_Texture shader_unlit_tex, shader_skybox;
@@ -100,7 +100,7 @@ void init() {
 		renderer.RenderMesh(mesh_cube);
         renderer.RenderMesh(mesh_invCube);
         renderer.RenderMesh(mesh_quad);
-        renderer.RenderGizmos(gm);
+        renderer.RenderGizmos(Gizmos::Get());
         };
 }
 void update() {
@@ -123,12 +123,14 @@ void update() {
         renderer.camera.transform.position += renderer.camera.transform.Up() * camMoveSpd;
     else
         hasEvent = oldHasEvent;
-    gm.BeginFrame();
+    Gizmos::BeginFrame();
     float mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
-    gm.AddBounds(mesh_monkey.GlobalBounds());
+    Handles::Axis(mesh_monkey.transform.position);
+    Handles::EndFrame();
 }
 void handle_event(SDL_Event& event) {
+    Handles::HandleEvent(event);
     switch (event.type) {
     case SDL_EVENT_MOUSE_WHEEL:
         renderer.camera.transform.position-=renderer.camera.transform.Forward()*event.wheel.y;
@@ -147,6 +149,7 @@ void draw() {
     renderer.Render();
     renderer.RenderDepthTexture();
 }
+Renderer& Renderer::Get() { return renderer; }
 
 // Main code
 int main(int, char**)
