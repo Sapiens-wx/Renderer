@@ -11,8 +11,9 @@ public:
 	bool IntersectLineSegment(const glm::vec3& a, const glm::vec3& b, const float dist);
 	// @return a normalized value indicating where the ray hits at the line (with a tolerance of dist)
 	float IntersectAtLineSegment(const glm::vec3& a, const glm::vec3& b);
+	// @param offset=0 a normalized offset
 	// @return a point on the line indicating where the ray hits at the line (with a tolerance of dist)
-	glm::vec3 IntersectPointAtLineSegment(const glm::vec3& a, const glm::vec3& b);
+	glm::vec3 IntersectPointAtLineSegment(const glm::vec3& a, const glm::vec3& b, float offset=0);
 	// @return the *squared* distance of the ray and segment
 	float DistSqrRaySegment(const glm::vec3& a, const glm::vec3& b);
 public:

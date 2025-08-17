@@ -97,9 +97,9 @@ float Ray::IntersectAtLineSegment(const glm::vec3& a, const glm::vec3& b) {
         return 0;
     }
     v1 /= std::sqrtf(v1MagSqr);
-    return glm::dot(v0, v1) / glm::dot(lineDir, v1);
+    return -glm::dot(v0, v1) / glm::dot(lineDir, v1);
 }
-glm::vec3 Ray::IntersectPointAtLineSegment(const glm::vec3& a, const glm::vec3& b) {
+glm::vec3 Ray::IntersectPointAtLineSegment(const glm::vec3& a, const glm::vec3& b, float offset) {
     const constexpr float epsilon = 0.0001f;
     glm::vec3 lineDir = b - a;
     float lineDirMagSqr = glm::dot(lineDir, lineDir);
@@ -110,7 +110,7 @@ glm::vec3 Ray::IntersectPointAtLineSegment(const glm::vec3& a, const glm::vec3& 
         return a;
     }
     v1 /= std::sqrtf(v1MagSqr);
-    float t = glm::dot(v0, v1) / glm::dot(lineDir, v1);
+    float t = -glm::dot(v0, v1) / glm::dot(lineDir, v1) + offset;
     return a + t * lineDir;
 }
 

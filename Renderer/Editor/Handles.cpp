@@ -50,14 +50,12 @@ void Handles::Axis(glm::vec3& pos) {
 		direction = &Transform::up;
 		break;
 	}
-	if (!mouseButtonDownCaptured[MOUSE_LEFT]) {
+	if (!mouseButtonDownCaptured[MOUSE_LEFT]&&click) {
 		mouseButtonDownCaptured[MOUSE_LEFT] = true;
-		if (click) {
-			draggingObj = &pos;
-			dragStartInfo.origin = pos;
-			dragStartInfo.direction = *direction;
-			dragStartInfo.offset = mouseRay.IntersectAtLineSegment(pos, right); //record the offset
-		}
+		draggingObj = &pos;
+		dragStartInfo.origin = pos;
+		dragStartInfo.direction = pos+*direction;
+		dragStartInfo.offset = -mouseRay.IntersectAtLineSegment(pos, dragStartInfo.direction); //record the offset
 	}
 	else if (mouseButtonUp[MOUSE_LEFT]) {
 		if (draggingObj == &pos) {
@@ -65,10 +63,7 @@ void Handles::Axis(glm::vec3& pos) {
 		}
 	}
 	else if(draggingObj==&pos) {
-		const constexpr glm::vec3 origin = { 0,0,0 };
-		glm::vec3 unitVector = { clickRight, clickForward, clickUp };
-		pos = dragStartInfo.v + mouseRay.IntersectPointAtLineSegment(origin, unitVector);
-		pos = dragStartInfo.origin+unitVector
+		pos = mouseRay.IntersectPointAtLineSegment(dragStartInfo.origin, dragStartInfo.direction, dragStartInfo.offset);
 	}
 }
 

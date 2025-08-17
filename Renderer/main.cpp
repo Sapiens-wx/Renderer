@@ -127,6 +127,7 @@ void update() {
     float mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
     Handles::Axis(mesh_monkey.transform.position);
+    Handles::Axis(mesh_cube.transform.position);
     Handles::EndFrame();
 }
 void handle_event(SDL_Event& event) {
