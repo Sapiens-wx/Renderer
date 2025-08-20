@@ -34,6 +34,7 @@
 #include "Render/Gizmos.h"
 #include "Geometry.h"
 #include "Editor/Handles.h"
+#include "Trace.h"
 
 namespace im = ImGui;
 
@@ -48,6 +49,7 @@ Mesh mesh_monkey, mesh_cube, mesh_quad, mesh_invCube;
 Shader_BlinnPhong shader_blinnPhong;
 Shader_Unlit_Texture shader_unlit_tex, shader_skybox;
 Texture tex_test, tex_skyBox;
+RenderTexture rt;
 
 void gui() {
     if (im::Begin("Config")) {
@@ -59,21 +61,31 @@ void gui() {
         mesh_invCube.Gui();
     }
     im::End();
+    Trace::Gui();
 }
 void init() {
+    Trace::Begin("opengl init");
     glewInit();
     renderer.Init(windowWidth, windowHeight);
+    Trace::End();
     //load textures
+    Trace::Begin("load textures");
     tex_test.LoadFromFile("Resources\\Texture\\tex.png");
     tex_skyBox.LoadFromFile("Resources\\Texture\\skybox.png");
+    Trace::End();
+    //render textures
+    rt.Create(windowWidth, windowHeight);
     //load shaders
+    Trace::Begin("load shaders");
     shader_blinnPhong.Load();
     shader_blinnPhong.tex = &tex_test.renderTex;
     shader_unlit_tex.Load();
-    shader_unlit_tex.texture = &renderer.depthTexture;
+    shader_unlit_tex.texture = &rt;
     shader_skybox.Load();
     shader_skybox.texture = &tex_skyBox.renderTex;
+    Trace::End();
     //load models
+    Trace::Begin("load models");
     mesh_monkey.LoadFromFile("Resources\\Mesh\\monkey.obj");
     mesh_monkey.transform.position = glm::vec3(0, 0, 3);
     mesh_monkey.transform.SetRotation(glm::vec3(0, 0, 0));
@@ -93,6 +105,7 @@ void init() {
     mesh_invCube.transform.SetRotation(glm::vec3(0, 0, 0));
     mesh_invCube.shader = &shader_skybox;
     mesh_invCube.name = "inv cube";
+    Trace::End();
     //setup RenderObjects callback
     renderer.RenderObjects = []() {
 		renderer.SetGLOpaque();
@@ -102,8 +115,13 @@ void init() {
         renderer.RenderMesh(mesh_quad);
         renderer.RenderGizmos(Gizmos::Get());
         };
+    renderer.PostProcessing = []() {
+        renderer.Blit(&rt, &renderer.frameTexture, Shader_PP::Get());
+        rt.Swap(renderer.frameTexture);
+        };
 }
 void update() {
+    Trace::Begin("update");
     const bool* keys = SDL_GetKeyboardState(NULL);
     int oldHasEvent = hasEvent;
     hasEvent = 2;
@@ -129,8 +147,10 @@ void update() {
     Handles::Axis(mesh_monkey.transform.position);
     Handles::Axis(mesh_cube.transform.position);
     Handles::EndFrame();
+    Trace::End();
 }
 void handle_event(SDL_Event& event) {
+    Trace::Begin("event handling");
     Handles::HandleEvent(event);
     switch (event.type) {
     case SDL_EVENT_MOUSE_WHEEL:
@@ -145,9 +165,12 @@ void handle_event(SDL_Event& event) {
         }
         break;
     }
+    Trace::End();
 }
 void draw() {
+    Trace::Begin("render");
     renderer.Render();
+    Trace::End();
     renderer.RenderDepthTexture();
 }
 Renderer& Renderer::Get() { return renderer; }
@@ -301,6 +324,7 @@ int main(int, char**)
 
         if (hasEvent) {
             --hasEvent;
+            Trace::Begin("Frame");
             update();
             // Start the Dear ImGui frame
             ImGui_ImplOpenGL3_NewFrame();
@@ -320,6 +344,11 @@ int main(int, char**)
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             draw();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+            Trace::End();
+        }
+        else {
+            SDL_Delay(10);
+            continue;
         }
         SDL_GL_SwapWindow(window);
     }

@@ -10,12 +10,13 @@ class Shader;
 
 class Vertex {
 public:
-	Vertex(const glm::vec3 pos) :pos(pos) {}
+	Vertex(const glm::vec3& pos) :pos(pos) {}
+	Vertex(const glm::vec3& pos, const glm::vec2& uv) :pos(pos), uv(uv), normal(0,0,0) {}
 	Vertex() {}
 public:
 	glm::vec3 pos;
-	glm::vec2 uv;
 	glm::vec3 normal;
+	glm::vec2 uv;
 };
 
 class Mesh {

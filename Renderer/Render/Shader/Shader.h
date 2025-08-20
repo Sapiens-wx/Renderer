@@ -64,3 +64,13 @@ public:
 public:
 	RenderTexture* texture;
 };
+
+class Shader_PP :public Shader {
+public:
+	void UpdateShaderVariables(const Renderer& renderer) const override;
+	void Load() override;
+	static Shader_PP& Get();
+private:
+	mutable GLuint leftTopLoc, leftBotLoc, rightTopLoc, rightBotLoc;
+	static std::unique_ptr<Shader_PP> inst;
+};

@@ -146,6 +146,7 @@
     <ClCompile Include="Render\Shader\Shader.cpp" />
     <ClCompile Include="Render\Texture.cpp" />
     <ClCompile Include="Render\Transform.cpp" />
+    <ClCompile Include="Trace.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="def.h" />
@@ -165,10 +166,13 @@
     <ClInclude Include="Render\Shader\Shader.h" />
     <ClInclude Include="Render\Texture.h" />
     <ClInclude Include="Render\Transform.h" />
+    <ClInclude Include="Trace.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Shader\BP.frag" />
     <None Include="Resources\Shader\BP.vert" />
+    <None Include="Resources\Shader\RayTrace.frag" />
+    <None Include="Resources\Shader\RayTrace.vert" />
     <None Include="Resources\Shader\Unlit.frag" />
     <None Include="Resources\Shader\Unlit.vert" />
     <None Include="Resources\Shader\Unlit_Texture.frag" />

@@ -5,6 +5,7 @@ class RenderTexture {
 public:
 	RenderTexture();
 	~RenderTexture();
+	void Swap(RenderTexture& other);
 	/* calls glGenTextures if needed
 	 * then calls glTexImage2D
 	*/
@@ -13,6 +14,7 @@ public:
 	*/
 	void UpdateImage(int x, int y, int width, int height, GLint format, GLenum valueType, const void* pixels);
 	void Release();
+	//gets the id of the texture
 	inline GLuint GetID() const { return id; }
 	inline int GetWidth() const { return w; }
 	inline int GetHeight() const { return h; }

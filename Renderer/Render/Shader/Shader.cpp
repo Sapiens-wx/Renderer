@@ -87,6 +87,7 @@ void main()
 Shader defaultShader;
 #pragma endregion
 std::unique_ptr<Shader_Unlit> Shader_Unlit::inst;
+std::unique_ptr<Shader_PP> Shader_PP::inst;
 
 Shader::Shader() :shaderProgram(NULL)
 {}
@@ -250,5 +251,27 @@ void Shader_Unlit_Texture::UpdateShaderVariables(const Renderer& renderer) const
     Base::UpdateShaderVariables(renderer);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture->GetID());
+}
+
+void Shader_PP::Load() {
+    initFromFile("Resources\\Shader\\RayTrace.vert", "Resources\\Shader\\RayTrace.frag");
+}
+void Shader_PP::UpdateShaderVariables(const Renderer& renderer) const {
+    Base::UpdateShaderVariables(renderer);
+    InitLoc(leftTopLoc, "leftTop");
+    InitLoc(leftBotLoc, "leftBot");
+    InitLoc(rightTopLoc, "rightTop");
+    InitLoc(rightBotLoc, "rightBot");
+    glUniform3fv(leftTopLoc, 1, &renderer.camera.leftTop.x);
+    glUniform3fv(leftBotLoc, 1, &renderer.camera.leftBot.x);
+    glUniform3fv(rightTopLoc, 1, &renderer.camera.rightTop.x);
+    glUniform3fv(rightBotLoc, 1, &renderer.camera.rightBot.x);
+}
+Shader_PP& Shader_PP::Get() {
+    if (inst == nullptr) {
+        inst = std::make_unique<Shader_PP>();
+        inst->Load();
+    }
+    return *inst;
 }
 #pragma warning(pop)

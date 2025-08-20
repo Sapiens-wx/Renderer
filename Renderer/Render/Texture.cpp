@@ -1,9 +1,10 @@
 #define STB_IMAGE_IMPLEMENTATION
-#include "Texture.h"
 #include <stb_image.h>
 #include <string.h>
+#include <GL/glew.h>
 #include <SDL3/SDL_opengl.h>
 #include "../def.h"
+#include "Texture.h"
 
 Texture::Texture() :data(nullptr)
 {}
@@ -73,4 +74,10 @@ void RenderTexture::Release() {
     if(id)
 		glDeleteTextures(1, &id);
     id = 0;
+}
+
+void RenderTexture::Swap(RenderTexture& rt) {
+    GLuint tmp = id;
+    id = rt.id;
+    rt.id = tmp;
 }

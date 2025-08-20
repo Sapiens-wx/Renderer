@@ -86,16 +86,13 @@ void Renderer::Init(int width, int height)
 	camera.Init(width, height);
 	//depth texture staff
 	depthTexture.Create(width, height, GL_UNSIGNED_BYTE, nullptr, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT);
-	//frame buffer staff
-	glGenFramebuffers(1, &framebuffer);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture.GetID(), 0);
-	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-		CERR << "Framebuffer is not complete\n";
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	frameTexture.Create(width, height, GL_UNSIGNED_BYTE, nullptr, GL_RGBA, GL_RGBA);
+	BindToDepthBuffer();
+	BindToFrameBuffer();
+	CreateFrameDepthBuffer();
+	//shader
+	shader_unlit.Load();
+	shader_unlit.texture = &frameTexture;
 }
 
 void Renderer::SetGLTransparent() {
@@ -125,11 +122,17 @@ void Renderer::Gui() {
 
 void Renderer::Render() {
 	camera.SetupVP();
+	glBindFramebuffer(GL_FRAMEBUFFER, frameBufferLoc);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, frameTexture.GetID(), 0);
+	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	RenderObjects();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	PostProcessing();
+	Blit(0, &frameTexture, shader_unlit);
 }
 
 void Renderer::RenderDepthTexture() {
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthBufferLoc);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	RenderObjects();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -250,4 +253,121 @@ void Camera::SetupVP() {
 		near, far); // 近平面与远平面
 
 	VP = projection * view;
+	
+	//corner points
+	glm::vec3 center = -transform.Forward() * near*1.0001f + transform.position;
+	const glm::vec3 right = transform.Right(), up = transform.Up();
+	float halfH = glm::tan(glm::radians(fov) / 2) * near, halfW=halfH*aspectRatio;
+	glm::vec3 maxx=right*halfW, maxy=up*halfH;
+	leftTop = center - maxx + maxy;
+	leftBot = center - maxx - maxy;
+	rightTop = center + maxx + maxy;
+	rightBot = center + maxx - maxy;
+}
+
+void Renderer::Blit(RenderTexture* dst, RenderTexture* src, const Shader& shader) {
+	const constexpr glm::mat4 mat4Identity = glm::mat4(1);
+
+	// 获取在 shader 中的 uniform 变量位置
+	glUseProgram(shader.getShader());
+	shader.UpdateShaderVariables(*this);
+	if (dst) {
+		glBindFramebuffer(GL_FRAMEBUFFER, frameBufferLoc);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, dst->GetID(), 0);
+	}
+	if (src) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, src->GetID());
+	}
+	GLuint modelLoc = glGetUniformLocation(shader.getShader(), "model");
+
+	// 在渲染循环中，设置矩阵
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(mat4Identity));
+
+	//
+	Vertex vertices[] = {
+		{camera.leftTop, {0,1}},
+		{camera.rightBot, {1,0}},
+		{camera.rightTop,  {1,1}},
+		{camera.leftTop, {0,1}},
+		{camera.leftBot, {0,0}},
+		{camera.rightBot, {1,0}}
+	};
+
+	//=========Buffer=========
+	GLuint VBO, VAO;
+
+	// 创建 VAO、VBO 和 EBO
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+
+	// 绑定 VAO
+	glBindVertexArray(VAO);
+
+	// 绑定 VBO，上传顶点数据
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// 设置顶点属性指针
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, pos)); // vertex position
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, normal)); // vertex uv
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, uv)); // vertex uv
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+
+	//========Render========
+	// 在渲染循环中使用 VAO 和着色器渲染立方体
+	glDrawArrays(GL_TRIANGLES, 0, sizeof(vertices)/sizeof(Vertex));
+
+	//disable
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(2);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	// 解绑 VAO
+	glBindVertexArray(0);
+	//delete
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
+}
+
+void Renderer::BindToFrameBuffer() {
+	glGenFramebuffers(1, &frameBufferLoc);
+	glBindFramebuffer(GL_FRAMEBUFFER, frameBufferLoc);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, frameTexture.GetID(), 0);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		CERR << "Framebuffer is not complete\n";
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Renderer::BindToDepthBuffer() {
+	glGenFramebuffers(1, &depthBufferLoc);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthBufferLoc);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture.GetID(), 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		CERR << "Framebuffer is not complete\n";
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Renderer::CreateFrameDepthBuffer() {
+	glBindFramebuffer(GL_FRAMEBUFFER, frameBufferLoc);
+	glGenRenderbuffers(1, &frameDepthBufferLoc);
+	glBindRenderbuffer(GL_RENDERBUFFER, frameDepthBufferLoc);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, frameDepthBufferLoc);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+Renderer::~Renderer() {
+	if (frameDepthBufferLoc)
+		glDeleteRenderbuffers(1, &frameDepthBufferLoc);
+	if (frameBufferLoc)
+		glDeleteFramebuffers(1, &frameBufferLoc);
+	if (depthBufferLoc)
+		glDeleteFramebuffers(1, &depthBufferLoc);
 }
